@@ -42,6 +42,38 @@ class Lock(SmartModule):
                 type=Feature.Type.BinarySensor,
             )
         )
+        # The DL100 reports battery in getDeviceInfo but does NOT advertise the
+        # "battery_detect" component, so the generic BatterySensor module never
+        # loads for it. Expose battery here instead, mirroring BatterySensor's
+        # feature ids so downstream consumers (e.g. Home Assistant) stay
+        # consistent.
+        if "battery_percentage" in self._device.sys_info:
+            self._add_feature(
+                Feature(
+                    self._device,
+                    id="battery_level",
+                    name="Battery level",
+                    container=self,
+                    attribute_getter="battery",
+                    icon="mdi:battery",
+                    unit_getter=lambda: "%",
+                    category=Feature.Category.Info,
+                    type=Feature.Type.Sensor,
+                )
+            )
+        if "at_low_battery" in self._device.sys_info:
+            self._add_feature(
+                Feature(
+                    self._device,
+                    id="battery_low",
+                    name="Battery low",
+                    container=self,
+                    attribute_getter="battery_low",
+                    icon="mdi:alert",
+                    category=Feature.Category.Debug,
+                    type=Feature.Type.BinarySensor,
+                )
+            )
 
     def query(self) -> dict:
         """Query to execute during the update cycle."""
@@ -51,6 +83,16 @@ class Lock(SmartModule):
     def is_locked(self) -> bool:
         """Return True when the bolt is extended (lock_status == 0)."""
         return self._device.sys_info["lock_status"] == LOCK_STATUS_LOCKED
+
+    @property
+    def battery(self) -> int:
+        """Return the battery level percentage."""
+        return self._device.sys_info["battery_percentage"]
+
+    @property
+    def battery_low(self) -> bool:
+        """Return True if the battery is low."""
+        return bool(self._device.sys_info["at_low_battery"])
 
     async def lock(self) -> dict:
         """Lock the device (extend the bolt)."""
