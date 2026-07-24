@@ -43,8 +43,10 @@ from .thermostat import Thermostat
 from .time import Time
 from .triggerlogs import TriggerLogs
 from .waterleaksensor import WaterleakSensor
+from .lock import Lock
 
 __all__ = [
+    "Lock",
     "Alarm",
     "Time",
     "Energy",
