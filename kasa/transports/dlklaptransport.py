@@ -152,10 +152,15 @@ class DlklapTransport(BaseTransport):
         -- which is inconsistent with the KLAP/AES transports that always
         expose a non-null hash derived from the (possibly empty) credentials.
         The real credential requirement is enforced later in ``_ensure_login``.
+
+        NOTE: this token is deliberately derived from the (non-secret) username
+        only. The password must never be fed into a fast hash such as SHA256:
+        DLKLAP authenticates against the cloud in ``_ensure_login`` (where a
+        wrong password is rejected), so this value exists purely as a stable,
+        non-null sentinel and carries no authentication weight.
         """
         username = self._credentials.username if self._credentials else ""
-        password = self._credentials.password if self._credentials else ""
-        return _sha256(f"{username}:{password}".encode()).hex()
+        return _sha256(username.encode()).hex()
 
     async def send(self, request: str) -> dict[str, Any]:
         """Encrypt ``request``, POST to /app/request, return the decrypted dict.

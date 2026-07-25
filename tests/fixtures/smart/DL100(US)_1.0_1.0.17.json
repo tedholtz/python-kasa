@@ -27,36 +27,8 @@
             }
         ]
     },
-    "get_device_info": {
-        "device_id": "0000000000000000000000000000000000000000",
-        "fw_ver": "1.0.17 Build 260417 Rel.082002",
-        "hw_ver": "1.0",
-        "type": "SMART.TAPOLOCK",
-        "model": "DL100",
-        "mac": "50-3D-D1-00-00-00",
-        "hw_id": "00000000000000000000000000000000",
-        "fw_id": "00000000000000000000000000000000",
-        "oem_id": "00000000000000000000000000000000",
-        "ip": "127.0.0.123",
-        "time_diff": -480,
-        "region": "America/Los_Angeles",
-        "lang": "en_US",
-        "nickname": "I01BU0tFRF9OQU1FIw==",
-        "ssid": "I01BU0tFRF9TU0lEIw==",
-        "rssi": -40,
-        "signal_level": 3,
-        "lock_status": 0,
-        "battery_percentage": 81,
-        "at_low_battery": false,
-        "wifi_mode_status": 1,
-        "overheated": false
-    },
-    "get_device_time": {
-        "timestamp": 1782000000,
-        "time_diff": -480,
-        "region": "America/Los_Angeles"
-    },
     "discovery_result": {
+        "error_code": 0,
         "result": {
             "device_id": "0000000000000000000000000000000000000000",
             "device_model": "DL100(US)",
@@ -74,10 +46,38 @@
             "obd_src": "tplink",
             "owner": "00000000000000000000000000000000",
             "protocol_version": 1
-        },
-        "error_code": 0
+        }
     },
     "get_connect_cloud_state": {
         "status": 0
+    },
+    "get_device_info": {
+        "at_low_battery": false,
+        "battery_percentage": 81,
+        "device_id": "0000000000000000000000000000000000000000",
+        "fw_id": "00000000000000000000000000000000",
+        "fw_ver": "1.0.17 Build 260417 Rel.082002",
+        "hw_id": "00000000000000000000000000000000",
+        "hw_ver": "1.0",
+        "ip": "127.0.0.123",
+        "lang": "en_US",
+        "lock_status": 0,
+        "mac": "50-3D-D1-00-00-00",
+        "model": "DL100",
+        "nickname": "I01BU0tFRF9OQU1FIw==",
+        "oem_id": "00000000000000000000000000000000",
+        "overheated": false,
+        "region": "America/Los_Angeles",
+        "rssi": -40,
+        "signal_level": 3,
+        "ssid": "I01BU0tFRF9TU0lEIw==",
+        "time_diff": -480,
+        "type": "SMART.TAPOLOCK",
+        "wifi_mode_status": 1
+    },
+    "get_device_time": {
+        "region": "America/Los_Angeles",
+        "time_diff": -480,
+        "timestamp": 1782000000
     }
 }

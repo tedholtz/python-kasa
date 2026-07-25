@@ -71,8 +71,8 @@ if TYPE_CHECKING:
     from .device import Device
     from .iot import modules as iot
     from .smart import modules as smart
-    from .smartcam import modules as smartcam
     from .smart.modules import Lock
+    from .smartcam import modules as smartcam
 
 _LOGGER = logging.getLogger(__name__)
 
