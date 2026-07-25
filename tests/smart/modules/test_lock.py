@@ -12,9 +12,11 @@ from __future__ import annotations
 
 from pytest_mock import MockerFixture
 
+from kasa import Module
 from kasa.smart import SmartDevice
 
 from ...device_fixtures import parametrize
+from ...fakeprotocol_smart import FakeSmartTransport
 
 # The DL100 has no dedicated component for the lock; the module loads off the
 # `lock_status` sysinfo key (SYSINFO_LOOKUP_KEYS=["lock_status"]), so we select
@@ -25,9 +27,10 @@ lock_iter = parametrize(
     protocol_filter={"SMART"},
 )
 
-# The Lock module is registered by class name; use the string key unless a
-# Module.Lock constant was added to the Module enum.
-LOCK_MODULE = "Lock"
+# Module.Lock is now a typed ModuleName[Lock], so use it instead of the bare
+# string key. This gives static checkers the concrete Lock type back from
+# dev.modules.get()/[] instead of the base SmartModule.
+LOCK_MODULE = Module.Lock
 
 
 def _set_lock_status(dev: SmartDevice, value: int) -> None:
@@ -37,7 +40,9 @@ def _set_lock_status(dev: SmartDevice, value: int) -> None:
     info dict (get_device_info and, if present, getDeviceInfo) so that
     is_locked reflects the change after the next update() call.
     """
-    info = dev.protocol._transport.info
+    transport = dev.protocol._transport
+    assert isinstance(transport, FakeSmartTransport)
+    info = transport.info
     for key in ("get_device_info", "getDeviceInfo"):
         if key in info:
             info[key]["lock_status"] = value
@@ -64,12 +69,12 @@ async def test_is_locked_polarity(dev: SmartDevice):
     # Fixture ships lock_status=0 (bolt extended = LOCKED).
     _set_lock_status(dev, 0)
     await dev.update()
-    assert dev.modules.get(LOCK_MODULE).is_locked is True
+    assert lock.is_locked is True
 
     # Retract the bolt -> UNLOCKED.
     _set_lock_status(dev, 1)
     await dev.update()
-    assert dev.modules.get(LOCK_MODULE).is_locked is False
+    assert lock.is_locked is False
 
 
 @lock_iter

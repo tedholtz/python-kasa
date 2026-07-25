@@ -72,6 +72,7 @@ if TYPE_CHECKING:
     from .iot import modules as iot
     from .smart import modules as smart
     from .smartcam import modules as smartcam
+    from .smart.modules import Lock
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -140,6 +141,7 @@ class Module(ABC):
     LightTransition: Final[ModuleName[smart.LightTransition]] = ModuleName(
         "LightTransition"
     )
+    Lock: Final[ModuleName[Lock]] = ModuleName("Lock")
     MotionSensor: Final[ModuleName[smart.MotionSensor]] = ModuleName("MotionSensor")
     ReportMode: Final[ModuleName[smart.ReportMode]] = ModuleName("ReportMode")
     SmartLightEffect: Final[ModuleName[smart.SmartLightEffect]] = ModuleName(
