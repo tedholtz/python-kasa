@@ -34,9 +34,9 @@ LOCK_MODULE = "Lock"
 def _set_lock_status(dev: SmartDevice, value: int) -> None:
     """Flip the device's reported lock_status in the fake transport fixture.
 
-    Updates both the snake_case sysinfo used by SmartDevice.update() and the
-    camelCase getDeviceInfo used by the Lock module's QUERY so is_locked reflects
-    the change regardless of which the module reads.
+    Updates lock_status in every device-info key present in the transport's
+    info dict (get_device_info and, if present, getDeviceInfo) so that
+    is_locked reflects the change after the next update() call.
     """
     info = dev.protocol._transport.info
     for key in ("get_device_info", "getDeviceInfo"):
