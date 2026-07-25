@@ -50,6 +50,7 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from kasa.deviceconfig import DeviceConfig
+from kasa.httpclient import HttpClient
 from kasa.exceptions import (
     AuthenticationError,
     KasaException,
@@ -98,11 +99,9 @@ class DlklapTransport(BaseTransport):
     def __init__(self, *, config: DeviceConfig) -> None:
         super().__init__(config=config)
 
-        if not self._credentials or not self._credentials.username:
-            raise AuthenticationError(
-                "DLKLAP requires TP-Link cloud credentials "
-                "(username/email and password)."
-            )
+        # Credentials are validated lazily in ``_ensure_login`` rather than here
+        # so that construction (e.g. during discovery) never fails; other
+        # transports behave the same way.
 
         # A stable app-instance UUID reused for the lifetime of the transport.
         self._terminal_uuid: str = str(uuid.uuid4()).upper()
@@ -122,6 +121,14 @@ class DlklapTransport(BaseTransport):
         # connection-scoped, so hs0/hs1/hs2/request must all reuse this client.
         self._lock_client: httpx.AsyncClient | None = None
 
+        # Standard kasa HttpClient, exposed for interface/cleanup compliance
+        # and to honour DeviceConfig.http_client. NOTE: the DLKLAP handshake
+        # and app requests deliberately use self._lock_client (raw httpx)
+        # instead -- the raw 33-byte handshake0 body must not be re-encoded,
+        # and the connection-scoped TP_SESSIONID cookie requires every request
+        # to share a single client, so app traffic cannot be routed here.
+        self._http_client = HttpClient(config=self._config)
+
         _LOGGER.debug("Created DLKLAP transport for %s", self._host)
         self._base_url = f"http://{self._host}:{self._port}"
 
@@ -136,8 +143,19 @@ class DlklapTransport(BaseTransport):
 
     @property
     def credentials_hash(self) -> str | None:
-        """DLKLAP authenticates via the cloud; no reusable local hash."""
-        return None
+        """Return a stable, non-null credentials hash.
+
+        DLKLAP authenticates against the TP-Link cloud rather than with a
+        local KLAP-style auth hash. Returning ``None`` here, however, would
+        make :meth:`SmartDevice.update` reject the device up front -- its guard
+        raises when both ``credentials`` and ``credentials_hash`` are ``None``
+        -- which is inconsistent with the KLAP/AES transports that always
+        expose a non-null hash derived from the (possibly empty) credentials.
+        The real credential requirement is enforced later in ``_ensure_login``.
+        """
+        username = self._credentials.username if self._credentials else ""
+        password = self._credentials.password if self._credentials else ""
+        return _sha256(f"{username}:{password}".encode()).hex()
 
     async def send(self, request: str) -> dict[str, Any]:
         """Encrypt ``request``, POST to /app/request, return the decrypted dict.
@@ -167,9 +185,13 @@ class DlklapTransport(BaseTransport):
     async def close(self) -> None:
         """Close the HTTP client and reset internal state."""
         await self.reset()
-        client, self._lock_client = self._lock_client, None
+        client = getattr(self, "_lock_client", None)
+        self._lock_client = None
         if client is not None:
             await client.aclose()
+        http_client = getattr(self, "_http_client", None)
+        if http_client is not None:
+            await http_client.close()
 
     async def reset(self) -> None:
         """Reset handshake/session state (keeps the cloud token)."""
@@ -224,7 +246,11 @@ class DlklapTransport(BaseTransport):
         if self._token and self._account_id:
             return
         _LOGGER.debug("DLKLAP cloud login")
-        assert self._credentials is not None
+        if not self._credentials or not self._credentials.username:
+            raise AuthenticationError(
+                "DLKLAP requires TP-Link cloud credentials "
+                "(username/email and password)."
+            )
         async with httpx.AsyncClient(timeout=READ_TIMEOUT, verify=True) as client:
             resp = await client.post(
                 CLOUD_LOGIN_URL,

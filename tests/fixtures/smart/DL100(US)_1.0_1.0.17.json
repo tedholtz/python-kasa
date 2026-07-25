@@ -1,0 +1,100 @@
+{
+    "component_nego": {
+        "component_list": [
+            {
+                "id": "device",
+                "ver_code": 2
+            },
+            {
+                "id": "device_local_time",
+                "ver_code": 1
+            },
+            {
+                "id": "time",
+                "ver_code": 1
+            },
+            {
+                "id": "firmware",
+                "ver_code": 1
+            },
+            {
+                "id": "wireless",
+                "ver_code": 1
+            },
+            {
+                "id": "cloud_connect",
+                "ver_code": 1
+            }
+        ]
+    },
+    "get_device_info": {
+        "device_id": "80473DD74D40D2C6EBFBB08CACA3AE8524BAA697",
+        "fw_ver": "1.0.17 Build 260417 Rel.082002",
+        "hw_ver": "1.0",
+        "type": "SMART.TAPOLOCK",
+        "model": "DL100",
+        "mac": "50-3D-D1-A9-30-F6",
+        "hw_id": "00000000000000000000000000000000",
+        "fw_id": "00000000000000000000000000000000",
+        "oem_id": "00000000000000000000000000000000",
+        "ip": "127.0.0.123",
+        "time_diff": -480,
+        "region": "America/Los_Angeles",
+        "lang": "en_US",
+        "nickname": "RnJvbnQgRG9vcg==",
+        "ssid": "RG9udEJhcmtBdE5pZ2h0XzVH",
+        "rssi": -40,
+        "signal_level": 3,
+        "lock_status": 0,
+        "battery_percentage": 81,
+        "at_low_battery": false,
+        "wifi_mode_status": 1,
+        "overheated": false
+    },
+    "getDeviceInfo": {
+        "device_id": "80473DD74D40D2C6EBFBB08CACA3AE8524BAA697",
+        "fw_ver": "1.0.17 Build 260417 Rel.082002",
+        "hw_ver": "1.0",
+        "type": "SMART.TAPOLOCK",
+        "model": "DL100",
+        "mac": "50-3D-D1-A9-30-F6",
+        "ip": "127.0.0.123",
+        "nickname": "RnJvbnQgRG9vcg==",
+        "ssid": "RG9udEJhcmtBdE5pZ2h0XzVH",
+        "rssi": -40,
+        "signal_level": 3,
+        "lock_status": 0,
+        "battery_percentage": 81,
+        "at_low_battery": false,
+        "wifi_mode_status": 1
+    },
+    "get_device_time": {
+        "timestamp": 1782000000,
+        "time_diff": -480,
+        "region": "America/Los_Angeles"
+    },
+    "discovery_result": {
+        "result": {
+            "device_id": "80473DD74D40D2C6EBFBB08CACA3AE8524BAA697",
+            "device_model": "DL100(US)",
+            "device_name": "DL100",
+            "device_type": "SMART.TAPOLOCK",
+            "factory_default": false,
+            "ip": "127.0.0.123",
+            "is_support_iot_cloud": true,
+            "mac": "50-3D-D1-A9-30-F6",
+            "mgt_encrypt_schm": {
+                "encrypt_type": "DLKLAP",
+                "http_port": 80,
+                "is_support_https": false
+            },
+            "obd_src": "tplink",
+            "owner": "00000000000000000000000000000000",
+            "protocol_version": 1
+        },
+        "error_code": 0
+    },
+    "get_connect_cloud_state": {
+        "status": 0
+    }
+}
