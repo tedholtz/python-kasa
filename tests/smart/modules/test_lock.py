@@ -10,7 +10,6 @@ Polarity is intentionally counterintuitive and must NOT be inverted:
 
 from __future__ import annotations
 
-import pytest
 from pytest_mock import MockerFixture
 
 from kasa.smart import SmartDevice
@@ -108,7 +107,7 @@ async def test_lock_command_omits_owner_forbidden_fields(
 
 @lock_iter
 async def test_battery(dev: SmartDevice):
-    """battery / battery_low read from sysinfo (DL100 lacks battery_detect)."""
+    """Battery / battery_low read from sysinfo (DL100 lacks battery_detect)."""
     lock = dev.modules.get(LOCK_MODULE)
     assert lock is not None
     assert lock.battery == 81

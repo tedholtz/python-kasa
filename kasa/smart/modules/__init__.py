@@ -30,6 +30,7 @@ from .lighteffect import LightEffect
 from .lightpreset import LightPreset
 from .lightstripeffect import LightStripEffect
 from .lighttransition import LightTransition
+from .lock import Lock
 from .matter import Matter
 from .mop import Mop
 from .motionsensor import MotionSensor
@@ -43,7 +44,6 @@ from .thermostat import Thermostat
 from .time import Time
 from .triggerlogs import TriggerLogs
 from .waterleaksensor import WaterleakSensor
-from .lock import Lock
 
 __all__ = [
     "Lock",

@@ -50,12 +50,12 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from kasa.deviceconfig import DeviceConfig
-from kasa.httpclient import HttpClient
 from kasa.exceptions import (
     AuthenticationError,
     KasaException,
     _RetryableError,
 )
+from kasa.httpclient import HttpClient
 from kasa.json import loads as json_loads
 
 from .basetransport import BaseTransport
@@ -213,9 +213,7 @@ class DlklapTransport(BaseTransport):
         rand4 = secrets.token_bytes(4)
         secret = await self._handshake0(lock_client, rand4)
         control_key = await self._fetch_control_key(secret, rand4)
-        local_seed, remote_seed, lmk = await self._handshake1(
-            lock_client, control_key
-        )
+        local_seed, remote_seed, lmk = await self._handshake1(lock_client, control_key)
         await self._handshake2(lock_client, local_seed, remote_seed, lmk)
 
         self._session = _DlklapSession(local_seed, remote_seed, lmk)
@@ -226,7 +224,7 @@ class DlklapTransport(BaseTransport):
         if self._lock_client is None:
             timeout = httpx.Timeout(READ_TIMEOUT, connect=CONNECT_TIMEOUT)
             # verify=False: the device speaks plain HTTP, no TLS involved.
-            self._lock_client = httpx.AsyncClient(timeout=timeout, verify=False)
+            self._lock_client = httpx.AsyncClient(timeout=timeout, verify=False)  # noqa: S501
         return self._lock_client
 
     def _lock_headers(self, *, with_cookie: bool = False) -> dict[str, str]:
@@ -285,7 +283,10 @@ class DlklapTransport(BaseTransport):
         """
         if self._device_id:
             return
-        assert self._token is not None
+        if self._token is None:
+            raise KasaException(
+                "DLKLAP: cloud login required before resolving device id"
+            )
         _LOGGER.debug("DLKLAP resolving device id from cloud device list")
         async with httpx.AsyncClient(timeout=READ_TIMEOUT, verify=True) as client:
             resp = await client.post(
@@ -298,9 +299,7 @@ class DlklapTransport(BaseTransport):
         if body.get("error_code", -1) != 0:
             raise KasaException(f"getDeviceList failed: {body.get('msg', body)}")
         devices = body.get("result", {}).get("deviceList", [])
-        locks = [
-            d for d in devices if d.get("deviceType") == self.DEVICE_TYPE
-        ]
+        locks = [d for d in devices if d.get("deviceType") == self.DEVICE_TYPE]
         if len(locks) == 1:
             self._device_id = locks[0]["deviceId"]
         elif not locks:
@@ -315,14 +314,13 @@ class DlklapTransport(BaseTransport):
 
     # -- Step 2: handshake0 -------------------------------------------------
 
-    async def _handshake0(
-        self, lock_client: httpx.AsyncClient, rand4: bytes
-    ) -> str:
+    async def _handshake0(self, lock_client: httpx.AsyncClient, rand4: bytes) -> str:
         """Wake the lock and obtain the 236-char base64 ``secret``.
 
         Body is 33 raw bytes: sha((hex(rand4)+accountId).upper())[:32] + 0x00.
         """
-        assert self._account_id is not None
+        if self._account_id is None:
+            raise KasaException("DLKLAP: cloud login required before handshake0")
         hash_input = (rand4.hex() + self._account_id).upper().encode("ascii")
         body = _sha256(hash_input) + b"\x00"  # 32 + 1 = 33 bytes
 
@@ -343,8 +341,7 @@ class DlklapTransport(BaseTransport):
             ) as ex:
                 last_exc = ex
                 _LOGGER.debug(
-                    "handshake0 attempt %s/%s to %s failed (%s), lock may be "
-                    "waking",
+                    "handshake0 attempt %s/%s to %s failed (%s), lock may be waking",
                     attempt,
                     HANDSHAKE0_RETRIES,
                     self._host,
@@ -360,8 +357,10 @@ class DlklapTransport(BaseTransport):
 
     async def _fetch_control_key(self, secret: str, rand4: bytes) -> str:
         """Exchange the handshake0 ``secret`` for a per-session control key."""
-        assert self._token is not None
-        assert self._device_id is not None
+        if self._token is None or self._device_id is None:
+            raise KasaException(
+                "DLKLAP: login and device id required before control-key exchange"
+            )
         url = CONTROL_KEY_URL_FMT.format(device_id=self._device_id)
         headers = {
             "Content-Type": "application/json",
@@ -378,7 +377,7 @@ class DlklapTransport(BaseTransport):
         # This host presents TP-Link's PRIVATE CA (not a public root), so TLS
         # verification must be disabled for THIS call only. The login call above
         # carries the account password and stays fully verified.
-        async with httpx.AsyncClient(timeout=READ_TIMEOUT, verify=False) as client:
+        async with httpx.AsyncClient(timeout=READ_TIMEOUT, verify=False) as client:  # noqa: S501
             resp = await client.post(
                 url,
                 json={"secret": secret, "random": rand4.hex().upper()},
@@ -388,9 +387,7 @@ class DlklapTransport(BaseTransport):
         body = resp.json()
         control_key = body.get("controlKey")
         if not control_key:
-            raise AuthenticationError(
-                f"Cloud did not return a controlKey: {body}"
-            )
+            raise AuthenticationError(f"Cloud did not return a controlKey: {body}")
         return control_key
 
     # -- Step 4: handshake1 -------------------------------------------------
@@ -416,8 +413,7 @@ class DlklapTransport(BaseTransport):
         raw = resp.content
         if len(raw) != 48:
             raise KasaException(
-                f"handshake1 from {self._host} returned {len(raw)} bytes, "
-                "expected 48"
+                f"handshake1 from {self._host} returned {len(raw)} bytes, expected 48"
             )
         remote_seed = raw[:16]
         server_proof = raw[16:]
@@ -466,7 +462,8 @@ class DlklapTransport(BaseTransport):
     # -- Step 7: encrypted request ------------------------------------------
 
     async def _send_encrypted(self, request: str) -> dict[str, Any]:
-        assert self._session is not None
+        if self._session is None:
+            raise KasaException("DLKLAP: no active session")
         lock_client = self._get_lock_client()
         payload, seq = self._session.encrypt(request.encode())
         try:
