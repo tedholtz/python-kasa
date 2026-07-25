@@ -107,7 +107,7 @@ class FakeBackend:
     """Stateful fake cloud + lock device with per-test error injection knobs."""
 
     def __init__(self) -> None:
-        self.token = "cloud-token"
+        self.token = "cloud-token"  # noqa: S105 - fake cloud token for tests
         self.account_id = "ACCOUNT123"
         self.device_id = "DEVICE123"
         self.control_key: str | None = "K" * 64
@@ -194,6 +194,7 @@ class FakeBackend:
         self.local_seed = local_seed
         if self.hs1_mode == "badlen":
             return FakeResponse(200, content=b"\x00" * 10)
+        assert self.control_key is not None
         ck = self.control_key.upper().encode("ascii")
         if self.hs1_mode == "badproof":
             proof = b"\x00" * 32
@@ -231,7 +232,7 @@ class FakeAsyncClient:
         self._backend = backend
         self.closed = False
 
-    async def __aenter__(self) -> "FakeAsyncClient":
+    async def __aenter__(self) -> FakeAsyncClient:
         return self
 
     async def __aexit__(self, *exc) -> bool:
@@ -388,10 +389,10 @@ async def test_ensure_login_cloud_error(patch_httpx):
 
 async def test_ensure_login_is_cached(patch_httpx):
     transport = _make_transport()
-    transport._token = "cached"
+    transport._token = "cached"  # noqa: S105 - not a real secret
     transport._account_id = "cached-account"
     await transport._ensure_login()  # returns early, no network
-    assert transport._token == "cached"
+    assert transport._token == "cached"  # noqa: S105 - not a real secret
 
 
 async def test_ensure_device_id_none(patch_httpx):
